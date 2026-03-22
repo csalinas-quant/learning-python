@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Gestión de Proveedores</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181c24;
+    --border: #232733;
+    --border-bright: #2e3444;
+    --accent: #3b6fff;
+    --accent-dim: rgba(59,111,255,0.12);
+    --accent-glow: rgba(59,111,255,0.25);
+    --green: #22c55e;
+    --green-dim: rgba(34,197,94,0.12);
+    --yellow: #f59e0b;
+    --yellow-dim: rgba(245,158,11,0.12);
+    --red: #ef4444;
+    --red-dim: rgba(239,68,68,0.12);
+    --text: #e8eaf0;
+    --text-muted: #6b7280;
+    --text-dim: #9ca3af;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── LOGIN ── */
+  #login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59,111,255,0.08) 0%, transparent 70%);
+    position: relative;
+  }
+  #login-screen::before {
+    content:'';
+    position:absolute;inset:0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.015'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events:none;
+  }
+
+  .login-card {
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-radius: 20px;
+    padding: 48px 44px;
+    width: 400px;
+    position: relative;
+    box-shadow: 0 0 60px rgba(59,111,255,0.08), 0 24px 48px rgba(0,0,0,0.5);
+  }
+  .login-card::before {
+    content:'';
+    position:absolute;top:0;left:50%;transform:translateX(-50%);
+    width:60%;height:1px;
+    background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  }
+
+  .login-logo {
+    display:flex;align-items:center;gap:10px;margin-bottom:32px;
+  }
+  .login-logo .icon {
+    width:40px;height:40px;border-radius:10px;
+    background:linear-gradient(135deg,var(--accent),#6366f1);
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;
+  }
+  .login-logo span {
+    font-family:'Syne',sans-serif;font-weight:700;font-size:17px;letter-spacing:-0.3px;
+  }
+  .login-logo small { display:block;font-size:11px;color:var(--text-muted);font-weight:400; }
+
+  .login-title { font-family:'Syne',sans-serif;font-size:26px;font-weight:700;margin-bottom:6px; }
+  .login-sub { font-size:13.5px;color:var(--text-muted);margin-bottom:30px; }
+
+  .field-group { margin-bottom:18px; }
+  .field-group label { display:block;font-size:12px;font-weight:500;color:var(--text-dim);margin-bottom:7px;letter-spacing:0.5px;text-transform:uppercase; }
+
+  input[type=text], input[type=password], input[type=email], select, textarea {
+    width:100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  select { cursor:pointer; }
+  select option { background: var(--surface2); }
+
+  .btn {
+    width:100%;padding:13px;
+    background:linear-gradient(135deg,var(--accent),#6366f1);
+    border:none;border-radius:var(--radius);
+    color:#fff;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;
+    cursor:pointer;letter-spacing:0.3px;
+    transition:opacity .2s,transform .1s;
+  }
+  .btn:hover { opacity:.9;transform:translateY(-1px); }
+  .btn:active { transform:translateY(0); }
+
+  .error-msg {
+    background:var(--red-dim);border:1px solid var(--red);
+    color:var(--red);border-radius:var(--radius);padding:10px 14px;
+    font-size:13px;margin-bottom:16px;display:none;
+  }
+
+  /* ── APP SHELL ── */
+  #app { display:none; min-height:100vh; }
+
+  .topbar {
+    position:sticky;top:0;z-index:100;
+    background:rgba(10,12,16,0.9);backdrop-filter:blur(16px);
+    border-bottom:1px solid var(--border);
+    padding:0 32px;height:60px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .topbar-left { display:flex;align-items:center;gap:12px; }
+  .logo-mark {
+    width:30px;height:30px;border-radius:8px;
+    background:linear-gradient(135deg,var(--accent),#6366f1);
+    display:flex;align-items:center;justify-content:center;font-size:13px;
+  }
+  .topbar h1 { font-family:'Syne',sans-serif;font-size:15px;font-weight:700; }
+  .topbar-meta { font-size:12px;color:var(--text-muted); }
+
+  .topbar-right { display:flex;align-items:center;gap:16px; }
+  .month-badge {
+    background:var(--accent-dim);border:1px solid var(--accent);
+    color:var(--accent);border-radius:20px;padding:4px 12px;
+    font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;
+  }
+  .user-pill {
+    display:flex;align-items:center;gap:8px;
+    background:var(--surface2);border:1px solid var(--border);
+    border-radius:20px;padding:5px 12px 5px 6px;cursor:pointer;
+  }
+  .avatar {
+    width:24px;height:24px;border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),#6366f1);
+    display:flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:700;
+  }
+  .user-pill span { font-size:12px;font-weight:500; }
+
+  .logout-btn {
+    background:transparent;border:1px solid var(--border);
+    color:var(--text-muted);border-radius:var(--radius);padding:6px 12px;
+    font-size:12px;cursor:pointer;transition:all .2s;
+  }
+  .logout-btn:hover { border-color:var(--red);color:var(--red); }
+
+  /* ── LAYOUT ── */
+  .main-layout {
+    display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 60px);
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    border-right:1px solid var(--border);
+    padding:24px 16px;
+    background:var(--surface);
+  }
+  .sidebar-section { margin-bottom:24px; }
+  .sidebar-label {
+    font-size:10px;font-weight:700;color:var(--text-muted);
+    text-transform:uppercase;letter-spacing:1px;
+    padding:0 8px;margin-bottom:8px;
+  }
+  .nav-item {
+    display:flex;align-items:center;gap:10px;
+    padding:9px 10px;border-radius:8px;cursor:pointer;
+    font-size:13.5px;font-weight:500;color:var(--text-dim);
+    transition:all .15s;margin-bottom:2px;
+  }
+  .nav-item:hover { background:var(--surface2);color:var(--text); }
+  .nav-item.active { background:var(--accent-dim);color:var(--accent); }
+  .nav-item .ico { font-size:16px;width:20px;text-align:center; }
+  .nav-badge {
+    margin-left:auto;background:var(--red);color:#fff;
+    border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;
+  }
+  .nav-badge.green { background:var(--green); }
+  .nav-badge.yellow { background:var(--yellow);color:#000; }
+
+  .stats-mini { display:flex;flex-direction:column;gap:8px;padding:0 4px; }
+  .stat-row {
+    display:flex;align-items:center;justify-content:space-between;
+    padding:8px 10px;border-radius:8px;background:var(--surface2);
+  }
+  .stat-row-left { display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-dim); }
+  .stat-dot { width:8px;height:8px;border-radius:50%; }
+  .stat-val { font-size:14px;font-weight:700;font-family:'Syne',sans-serif; }
+
+  /* ── CONTENT ── */
+  .content { padding:28px 32px; overflow-y:auto; }
+
+  /* ── VIEWS ── */
+  .view { display:none; }
+  .view.active { display:block; }
+
+  /* ── PAGE HEADER ── */
+  .page-header { margin-bottom:28px; }
+  .page-header h2 { font-family:'Syne',sans-serif;font-size:22px;font-weight:700;margin-bottom:4px; }
+  .page-header p { font-size:13.5px;color:var(--text-muted); }
+  .header-row { display:flex;align-items:flex-start;justify-content:space-between; }
+
+  /* ── FORM CARD ── */
+  .form-card {
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius-lg);overflow:hidden;
+  }
+  .form-section {
+    padding:22px 24px;border-bottom:1px solid var(--border);
+  }
+  .form-section:last-child { border-bottom:none; }
+  .section-title {
+    display:flex;align-items:center;gap:8px;
+    font-family:'Syne',sans-serif;font-size:13px;font-weight:700;
+    color:var(--text-dim);text-transform:uppercase;letter-spacing:0.8px;
+    margin-bottom:18px;
+  }
+  .section-title .num {
+    width:22px;height:22px;border-radius:6px;
+    background:var(--accent-dim);border:1px solid var(--accent);
+    color:var(--accent);font-size:11px;display:flex;align-items:center;justify-content:center;
+  }
+
+  .form-row { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px; }
+  .form-row.thirds { grid-template-columns:1fr 1fr 1fr; }
+  .form-row.full { grid-template-columns:1fr; }
+  .form-row:last-child { margin-bottom:0; }
+
+  .field { position:relative; }
+  .field label {
+    display:block;font-size:11.5px;font-weight:500;color:var(--text-muted);
+    margin-bottom:6px;letter-spacing:0.4px;text-transform:uppercase;
+  }
+  .field .req { color:var(--accent);margin-left:2px; }
+
+  /* Autocomplete */
+  .autocomplete-wrapper { position:relative; }
+  .autocomplete-dropdown {
+    position:absolute;top:calc(100% + 4px);left:0;right:0;
+    background:var(--surface2);border:1px solid var(--border-bright);
+    border-radius:var(--radius);max-height:200px;overflow-y:auto;
+    z-index:50;display:none;
+    box-shadow:0 8px 24px rgba(0,0,0,0.4);
+  }
+  .autocomplete-dropdown.open { display:block; }
+  .autocomplete-item {
+    padding:9px 14px;font-size:13.5px;cursor:pointer;
+    border-bottom:1px solid var(--border);transition:background .1s;
+  }
+  .autocomplete-item:last-child { border-bottom:none; }
+  .autocomplete-item:hover,.autocomplete-item.selected { background:var(--accent-dim);color:var(--accent); }
+  .autocomplete-item small { display:block;font-size:11px;color:var(--text-muted);margin-top:1px; }
+
+  /* Status badges inline */
+  .status-badge {
+    display:inline-flex;align-items:center;gap:5px;
+    padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;
+  }
+  .status-badge.enviado { background:var(--green-dim);color:var(--green);border:1px solid var(--green); }
+  .status-badge.no-enviado { background:var(--red-dim);color:var(--red);border:1px solid var(--red); }
+  .status-badge.pagado { background:var(--green-dim);color:var(--green);border:1px solid var(--green); }
+  .status-badge.pendiente { background:var(--yellow-dim);color:var(--yellow);border:1px solid var(--yellow); }
+
+  /* Status selector */
+  .status-selector { display:flex;gap:8px; }
+  .status-opt {
+    flex:1;padding:10px;border-radius:var(--radius);border:1px solid var(--border);
+    background:var(--surface2);color:var(--text-dim);cursor:pointer;
+    font-size:13px;font-weight:500;text-align:center;transition:all .2s;
+  }
+  .status-opt:hover { border-color:var(--border-bright);color:var(--text); }
+  .status-opt.selected-green { background:var(--green-dim);border-color:var(--green);color:var(--green); }
+  .status-opt.selected-red { background:var(--red-dim);border-color:var(--red);color:var(--red); }
+  .status-opt.selected-yellow { background:var(--yellow-dim);border-color:var(--yellow);color:var(--yellow); }
+
+  /* Upload zone */
+  .upload-zone {
+    border:2px dashed var(--border);border-radius:var(--radius);
+    padding:20px;text-align:center;cursor:pointer;transition:all .2s;
+    background:var(--surface2);
+  }
+  .upload-zone:hover { border-color:var(--accent);background:var(--accent-dim); }
+  .upload-zone.has-file { border-color:var(--green);background:var(--green-dim); }
+  .upload-zone .upload-ico { font-size:24px;margin-bottom:6px; }
+  .upload-zone p { font-size:12.5px;color:var(--text-muted); }
+  .upload-zone p strong { color:var(--text);font-weight:500; }
+  .upload-zone input[type=file] { display:none; }
+
+  /* Blocker */
+  .blocker {
+    background:var(--red-dim);border:1px solid var(--red);
+    border-radius:var(--radius);padding:10px 14px;
+    font-size:13px;color:var(--red);display:none;margin-top:8px;
+    display:flex;align-items:center;gap:8px;
+  }
+
+  /* Submit */
+  .form-footer {
+    padding:22px 24px;
+    display:flex;align-items:center;justify-content:space-between;
+    border-top:1px solid var(--border);background:var(--surface2);
+  }
+  .form-footer-info { font-size:12.5px;color:var(--text-muted); }
+
+  .btn-submit {
+    background:linear-gradient(135deg,var(--accent),#6366f1);
+    border:none;border-radius:var(--radius);color:#fff;
+    font-family:'Syne',sans-serif;font-size:14px;font-weight:700;
+    padding:12px 28px;cursor:pointer;letter-spacing:0.3px;
+    transition:opacity .2s,transform .1s;
+  }
+  .btn-submit:hover { opacity:.9;transform:translateY(-1px); }
+  .btn-submit:disabled { opacity:.4;cursor:not-allowed;transform:none; }
+
+  /* ── TABLE VIEW ── */
+  .table-toolbar {
+    display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:20px;gap:12px;
+  }
+  .search-input-wrap { position:relative;flex:1;max-width:320px; }
+  .search-input-wrap input { padding-left:36px; }
+  .search-ico { position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px; }
+
+  .filter-row { display:flex;gap:8px; }
+  .filter-btn {
+    background:var(--surface2);border:1px solid var(--border);
+    color:var(--text-dim);border-radius:var(--radius);padding:7px 14px;
+    font-size:12.5px;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;
+  }
+  .filter-btn.active { background:var(--accent-dim);border-color:var(--accent);color:var(--accent); }
+
+  .btn-new {
+    background:linear-gradient(135deg,var(--accent),#6366f1);
+    border:none;border-radius:var(--radius);color:#fff;
+    font-family:'Syne',sans-serif;font-size:13px;font-weight:700;
+    padding:9px 18px;cursor:pointer;white-space:nowrap;
+  }
+
+  .data-table { width:100%;border-collapse:collapse; }
+  .data-table th {
+    text-align:left;padding:10px 14px;
+    font-size:11px;font-weight:600;color:var(--text-muted);
+    text-transform:uppercase;letter-spacing:0.8px;
+    border-bottom:1px solid var(--border);background:var(--surface);
+  }
+  .data-table th:first-child { border-radius:8px 0 0 0; }
+  .data-table th:last-child { border-radius:0 8px 0 0; }
+  .data-table td {
+    padding:13px 14px;font-size:13.5px;
+    border-bottom:1px solid var(--border);
+  }
+  .data-table tr:hover td { background:rgba(255,255,255,0.015); }
+  .data-table tr:last-child td { border-bottom:none; }
+
+  .tbl-wrap {
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius-lg);overflow:hidden;
+  }
+
+  .provider-name { font-weight:600;font-size:14px; }
+  .provider-rut { font-size:11.5px;color:var(--text-muted); }
+
+  .action-btn {
+    background:var(--surface2);border:1px solid var(--border);
+    color:var(--text-dim);border-radius:6px;padding:4px 10px;
+    font-size:12px;cursor:pointer;transition:all .15s;
+  }
+  .action-btn:hover { border-color:var(--accent);color:var(--accent); }
+
+  /* ── ALERTS VIEW ── */
+  .alert-list { display:flex;flex-direction:column;gap:12px; }
+  .alert-card {
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius-lg);padding:16px 20px;
+    display:flex;align-items:center;gap:16px;
+    border-left:3px solid transparent;transition:border-color .2s;
+  }
+  .alert-card.critical { border-left-color:var(--red); }
+  .alert-card.warning { border-left-color:var(--yellow); }
+  .alert-card.info { border-left-color:var(--accent); }
+  .alert-icon { font-size:24px;width:36px;text-align:center; }
+  .alert-body { flex:1; }
+  .alert-title { font-weight:600;font-size:14px;margin-bottom:2px; }
+  .alert-desc { font-size:12.5px;color:var(--text-muted); }
+  .alert-meta { font-size:11px;color:var(--text-muted);white-space:nowrap; }
+  .alert-days {
+    background:var(--red-dim);border:1px solid var(--red);
+    color:var(--red);border-radius:8px;padding:4px 10px;
+    font-size:12px;font-weight:700;white-space:nowrap;
+  }
+  .alert-days.warn { background:var(--yellow-dim);border-color:var(--yellow);color:var(--yellow); }
+  .alert-days.ok { background:var(--green-dim);border-color:var(--green);color:var(--green); }
+
+  /* ── TOAST ── */
+  #toast {
+    position:fixed;bottom:24px;right:24px;
+    background:var(--surface2);border:1px solid var(--border-bright);
+    border-radius:var(--radius-lg);padding:14px 20px;
+    font-size:13.5px;color:var(--text);z-index:9999;
+    box-shadow:0 8px 24px rgba(0,0,0,0.5);
+    transform:translateY(20px);opacity:0;transition:all .3s;
+    display:flex;align-items:center;gap:10px;max-width:360px;
+  }
+  #toast.show { transform:translateY(0);opacity:1; }
+  #toast.success { border-color:var(--green); }
+  #toast.error { border-color:var(--red); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);
+    z-index:200;display:none;align-items:center;justify-content:center;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background:var(--surface);border:1px solid var(--border-bright);
+    border-radius:var(--radius-lg);padding:32px;max-width:460px;width:90%;
+    box-shadow:0 24px 48px rgba(0,0,0,0.6);
+  }
+  .modal h3 { font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:8px; }
+  .modal p { font-size:14px;color:var(--text-muted);margin-bottom:24px;line-height:1.6; }
+  .modal-actions { display:flex;gap:10px;justify-content:flex-end; }
+  .btn-cancel {
+    background:transparent;border:1px solid var(--border);
+    color:var(--text-muted);border-radius:var(--radius);padding:10px 20px;
+    font-size:13.5px;cursor:pointer;transition:all .15s;
+  }
+  .btn-cancel:hover { border-color:var(--border-bright);color:var(--text); }
+  .btn-confirm {
+    background:linear-gradient(135deg,var(--accent),#6366f1);
+    border:none;border-radius:var(--radius);color:#fff;
+    font-size:13.5px;font-weight:600;padding:10px 20px;cursor:pointer;
+  }
+
+  /* ── PROGRESS STEPS ── */
+  .progress-steps {
+    display:flex;align-items:center;gap:0;margin-bottom:28px;
+  }
+  .step {
+    display:flex;align-items:center;gap:8px;
+    font-size:12.5px;color:var(--text-muted);
+  }
+  .step-num {
+    width:24px;height:24px;border-radius:50%;border:1.5px solid var(--border);
+    display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;
+    transition:all .2s;
+  }
+  .step.done .step-num { background:var(--green);border-color:var(--green);color:#fff; }
+  .step.active .step-num { background:var(--accent);border-color:var(--accent);color:#fff; }
+  .step.active { color:var(--text); }
+  .step-line { flex:1;height:1px;background:var(--border);margin:0 8px;min-width:20px; }
+  .step-line.done { background:var(--accent); }
+
+  /* summary table */
+  .summary-table { width:100%;border-collapse:collapse;margin-top:12px; }
+  .summary-table td { padding:8px 0;font-size:13.5px;border-bottom:1px solid var(--border); }
+  .summary-table td:first-child { color:var(--text-muted);width:45%; }
+  .summary-table td:last-child { font-weight:500; }
+
+  .section-divider { height:1px;background:var(--border);margin:4px 0 20px; }
+
+  /* dashboard cards */
+  .dash-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px; }
+  .dash-card {
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius-lg);padding:20px;
+  }
+  .dash-card-label { font-size:11.5px;color:var(--text-muted);margin-bottom:10px;font-weight:500; }
+  .dash-card-val { font-family:'Syne',sans-serif;font-size:28px;font-weight:800; }
+  .dash-card-sub { font-size:11.5px;color:var(--text-muted);margin-top:4px; }
+  .dash-card.accent { border-color:var(--accent);background:var(--accent-dim); }
+  .dash-card.accent .dash-card-val { color:var(--accent); }
+  .dash-card.green { border-color:var(--green);background:var(--green-dim); }
+  .dash-card.green .dash-card-val { color:var(--green); }
+  .dash-card.yellow { border-color:var(--yellow);background:var(--yellow-dim); }
+  .dash-card.yellow .dash-card-val { color:var(--yellow); }
+  .dash-card.red { border-color:var(--red);background:var(--red-dim); }
+  .dash-card.red .dash-card-val { color:var(--red); }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width:5px; }
+  ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:var(--border-bright);border-radius:3px; }
+
+  /* animations */
+  @keyframes fadeUp { from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)} }
+  .fade-up { animation:fadeUp .35s ease both; }
+
+  .tag {
+    display:inline-block;padding:2px 8px;border-radius:20px;
+    font-size:11px;font-weight:600;margin-right:4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════ LOGIN ══════════════════════ -->
+<div id="login-screen">
+  <div class="login-card fade-up">
+    <div class="login-logo">
+      <div class="icon">📊</div>
+      <div>
+        <span>ProveedorSys</span>
+        <small>Portal de Gestión</small>
+      </div>
+    </div>
+    <h2 class="login-title">Iniciar sesión</h2>
+    <p class="login-sub">Ingresa tus credenciales para continuar.</p>
+    <div class="error-msg" id="login-error">⚠️ Usuario o contraseña incorrectos.</div>
+    <div class="field-group">
+      <label>Usuario</label>
+      <input type="text" id="login-user" placeholder="ejecutivo@empresa.cl">
+    </div>
+    <div class="field-group">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="••••••••">
+    </div>
+    <button class="btn" onclick="doLogin()">Ingresar al sistema →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════ APP ══════════════════════ -->
+<div id="app">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo-mark">📊</div>
+      <h1>ProveedorSys</h1>
+      <span class="topbar-meta">/ Sistema de Gestión de Proveedores</span>
+    </div>
+    <div class="topbar-right">
+      <div class="month-badge" id="current-month-badge">---</div>
+      <div class="user-pill">
+        <div class="avatar" id="user-avatar">?</div>
+        <span id="user-name-display">---</span>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
+
+  <!-- MAIN LAYOUT -->
+  <div class="main-layout">
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Navegación</div>
+        <div class="nav-item active" onclick="showView('dashboard')" id="nav-dashboard">
+          <span class="ico">⊞</span> Dashboard
+        </div>
+        <div class="nav-item" onclick="showView('nuevo')" id="nav-nuevo">
+          <span class="ico">＋</span> Nuevo Registro
+        </div>
+        <div class="nav-item" onclick="showView('registros')" id="nav-registros">
+          <span class="ico">☰</span> Todos los Registros
+          <span class="nav-badge" id="badge-total">0</span>
+        </div>
+        <div class="nav-item" onclick="showView('alertas')" id="nav-alertas">
+          <span class="ico">🔔</span> Alertas
+          <span class="nav-badge" id="badge-alertas">0</span>
+        </div>
+        <div class="nav-item" onclick="showView('exportar')" id="nav-exportar">
+          <span class="ico">↓</span> Exportar Excel
+        </div>
+        <div class="nav-item" onclick="cargarDesdeSheet()" style="margin-top:4px;">
+          <span class="ico">↺</span> Sincronizar Sheet
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div style="padding:8px 10px;font-size:11.5px;" id="conexion-badge">🟡 Cargando...</div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Resumen del Mes</div>
+        <div class="stats-mini">
+          <div class="stat-row">
+            <div class="stat-row-left"><div class="stat-dot" style="background:var(--green)"></div> Pagadas</div>
+            <div class="stat-val" style="color:var(--green)" id="stat-pagadas">0</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-row-left"><div class="stat-dot" style="background:var(--yellow)"></div> Pendientes</div>
+            <div class="stat-val" style="color:var(--yellow)" id="stat-pendientes">0</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-row-left"><div class="stat-dot" style="background:var(--accent)"></div> Enviadas</div>
+            <div class="stat-val" style="color:var(--accent)" id="stat-enviadas">0</div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-row-left"><div class="stat-dot" style="background:var(--red)"></div> Sin enviar</div>
+            <div class="stat-val" style="color:var(--red)" id="stat-sin-enviar">0</div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- CONTENT AREA -->
+    <main class="content">
+
+      <!-- ── DASHBOARD ── -->
+      <div class="view active" id="view-dashboard">
+        <div class="page-header fade-up">
+          <h2>Dashboard del Mes</h2>
+          <p>Resumen general de proveedores — <span id="dash-month-label">---</span></p>
+        </div>
+        <div class="dash-grid fade-up" id="dash-cards"></div>
+        <div class="tbl-wrap fade-up">
+          <table class="data-table" id="dash-table">
+            <thead>
+              <tr>
+                <th>Proveedor</th>
+                <th>Tipo de Servicio</th>
+                <th>Estado Envío</th>
+                <th>N° Factura</th>
+                <th>N° OC</th>
+                <th>Estado Pago</th>
+                <th>Días hasta vencimiento</th>
+              </tr>
+            </thead>
+            <tbody id="dash-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── NUEVO REGISTRO ── -->
+      <div class="view" id="view-nuevo">
+        <div class="header-row page-header fade-up">
+          <div>
+            <h2>Nuevo Registro de Proveedor</h2>
+            <p>Completa todos los campos. Los campos marcados con <span style="color:var(--accent)">*</span> son obligatorios.</p>
+          </div>
+        </div>
+
+        <div class="progress-steps fade-up" id="form-steps">
+          <div class="step active" id="step-1"><div class="step-num">1</div><span>Proveedor</span></div>
+          <div class="step-line" id="line-1"></div>
+          <div class="step" id="step-2"><div class="step-num">2</div><span>Documentos</span></div>
+          <div class="step-line" id="line-2"></div>
+          <div class="step" id="step-3"><div class="step-num">3</div><span>Confirmar</span></div>
+        </div>
+
+        <div class="form-card fade-up" id="form-step-1">
+          <!-- PASO 1: DATOS PROVEEDOR -->
+          <div class="form-section">
+            <div class="section-title"><div class="num">1</div> Datos del Proveedor</div>
+            <div class="form-row">
+              <div class="field">
+                <label>Nombre del Proveedor <span class="req">*</span></label>
+                <div class="autocomplete-wrapper">
+                  <input type="text" id="inp-nombre" placeholder="Escribe para buscar..." autocomplete="off" oninput="filterProviders(this.value)" onfocus="filterProviders(this.value)">
+                  <div class="autocomplete-dropdown" id="autocomplete-list"></div>
+                </div>
+              </div>
+              <div class="field">
+                <label>RUT del Proveedor <span class="req">*</span></label>
+                <input type="text" id="inp-rut" placeholder="12.345.678-9" readonly style="background:var(--bg);cursor:not-allowed;opacity:0.7">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label>Contacto</label>
+                <input type="text" id="inp-contacto" placeholder="---" readonly style="background:var(--bg);cursor:not-allowed;opacity:0.7">
+              </div>
+              <div class="field">
+                <label>Tipo de Servicio <span class="req">*</span></label>
+                <select id="inp-servicio">
+                  <option value="">— Seleccionar —</option>
+                  <option>Suministro de Materiales</option>
+                  <option>Servicios Tecnológicos</option>
+                  <option>Servicios Profesionales</option>
+                  <option>Mantenimiento y Reparación</option>
+                  <option>Transporte y Logística</option>
+                  <option>Marketing y Publicidad</option>
+                  <option>Arriendo de Equipos</option>
+                  <option>Consultoría</option>
+                  <option>Otro</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label>Mes de Registro <span class="req">*</span></label>
+                <input type="month" id="inp-mes" value="">
+              </div>
+              <div class="field">
+                <label>Fecha de Vencimiento de Factura</label>
+                <input type="date" id="inp-vencimiento">
+              </div>
+            </div>
+          </div>
+
+          <!-- ESTADO DE ENVÍO -->
+          <div class="form-section">
+            <div class="section-title"><div class="num">2</div> Estado de Envío de Factura</div>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">⚠️ <strong>Debes marcar "Enviado"</strong> para poder avanzar al siguiente paso.</p>
+            <div class="status-selector">
+              <div class="status-opt selected-red" id="opt-no-enviado" onclick="setEnvioStatus('no-enviado')">✗ No Enviado</div>
+              <div class="status-opt" id="opt-enviado" onclick="setEnvioStatus('enviado')">✓ Enviado</div>
+            </div>
+            <div class="blocker" id="envio-blocker" style="display:flex;margin-top:10px;">
+              🚫 Debes cambiar el estado a <strong style="margin-left:4px;">"Enviado"</strong> para continuar.
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <span class="form-footer-info">Paso 1 de 3</span>
+            <button class="btn-submit" onclick="goStep2()">Continuar → Documentos</button>
+          </div>
+        </div>
+
+        <!-- PASO 2: DOCUMENTOS -->
+        <div class="form-card fade-up" id="form-step-2" style="display:none">
+          <div class="form-section">
+            <div class="section-title"><div class="num">📁</div> Orden de Compra</div>
+            <div class="form-row">
+              <div class="field">
+                <label>Número de Orden de Compra <span class="req">*</span></label>
+                <input type="text" id="inp-oc-num" placeholder="OC-2024-0001">
+              </div>
+              <div class="field">
+                <label>Adjuntar Orden de Compra (Google Drive)</label>
+                <div class="upload-zone" id="zone-oc" onclick="document.getElementById('file-oc').click()">
+                  <input type="file" id="file-oc" accept=".pdf,.xlsx,.docx" onchange="handleFile('oc', this)">
+                  <div class="upload-ico">📎</div>
+                  <p><strong>Haz clic para adjuntar</strong> o arrastra aquí</p>
+                  <p>PDF, Excel, Word</p>
+                </div>
+                <div id="file-oc-name" style="font-size:12px;color:var(--green);margin-top:6px;display:none"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="section-title"><div class="num">🧾</div> Factura</div>
+            <div class="form-row">
+              <div class="field">
+                <label>Número de Factura <span class="req">*</span></label>
+                <input type="text" id="inp-fac-num" placeholder="F-00012345">
+              </div>
+              <div class="field">
+                <label>Adjuntar Factura (Google Drive)</label>
+                <div class="upload-zone" id="zone-fac" onclick="document.getElementById('file-fac').click()">
+                  <input type="file" id="file-fac" accept=".pdf,.xlsx" onchange="handleFile('fac', this)">
+                  <div class="upload-ico">🧾</div>
+                  <p><strong>Haz clic para adjuntar</strong> o arrastra aquí</p>
+                  <p>PDF, Excel</p>
+                </div>
+                <div id="file-fac-name" style="font-size:12px;color:var(--green);margin-top:6px;display:none"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="section-title"><div class="num">💳</div> Estado de Pago</div>
+            <div class="status-selector" style="max-width:400px">
+              <div class="status-opt" id="opt-pagada" onclick="setPagoStatus('pagada')">✓ Pagada</div>
+              <div class="status-opt selected-yellow" id="opt-pendiente" onclick="setPagoStatus('pendiente')">⏳ Pendiente</div>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <button class="btn-cancel" onclick="goStep1()">← Volver</button>
+            <button class="btn-submit" onclick="goStep3()">Continuar → Confirmar</button>
+          </div>
+        </div>
+
+        <!-- PASO 3: CONFIRMAR -->
+        <div class="form-card fade-up" id="form-step-3" style="display:none">
+          <div class="form-section">
+            <div class="section-title"><div class="num">✓</div> Confirmar Registro</div>
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Revisa los datos antes de guardar. Una vez guardado, el registro quedará en el sistema.</p>
+            <table class="summary-table" id="summary-table"></table>
+          </div>
+          <div class="form-footer">
+            <button class="btn-cancel" onclick="goStep2Back()">← Volver</button>
+            <button class="btn-submit" onclick="submitForm()">✓ Guardar Registro</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── REGISTROS ── -->
+      <div class="view" id="view-registros">
+        <div class="page-header fade-up">
+          <h2>Todos los Registros</h2>
+          <p>Historial completo de proveedores registrados en el sistema.</p>
+        </div>
+        <div class="table-toolbar fade-up">
+          <div class="search-input-wrap">
+            <span class="search-ico">🔍</span>
+            <input type="text" placeholder="Buscar proveedor..." oninput="filterTable(this.value)">
+          </div>
+          <div class="filter-row">
+            <button class="filter-btn active" onclick="filterByPago('todos',this)">Todos</button>
+            <button class="filter-btn" onclick="filterByPago('pagada',this)">Pagadas</button>
+            <button class="filter-btn" onclick="filterByPago('pendiente',this)">Pendientes</button>
+          </div>
+          <button class="btn-new" onclick="showView('nuevo')">+ Nuevo Registro</button>
+        </div>
+        <div class="tbl-wrap fade-up">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Proveedor / RUT</th>
+                <th>Servicio</th>
+                <th>Mes</th>
+                <th>OC N°</th>
+                <th>Factura N°</th>
+                <th>Envío</th>
+                <th>Pago</th>
+                <th>Vence en</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="registros-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── ALERTAS ── -->
+      <div class="view" id="view-alertas">
+        <div class="page-header fade-up">
+          <h2>🔔 Centro de Alertas</h2>
+          <p>Alertas automáticas del sistema. El bot las revisa a las 10:00 AM de lunes a viernes.</p>
+        </div>
+        <div class="alert-list fade-up" id="alert-list"></div>
+      </div>
+
+      <!-- ── EXPORTAR ── -->
+      <div class="view" id="view-exportar">
+        <div class="page-header fade-up">
+          <h2>Exportar a Excel</h2>
+          <p>Genera el archivo Excel que el bot de alertas lee automáticamente.</p>
+        </div>
+        <div class="form-card fade-up" style="max-width:640px">
+          <div class="form-section">
+            <div class="section-title"><div class="num">📊</div> Opciones de Exportación</div>
+            <div class="form-row">
+              <div class="field">
+                <label>Mes a exportar</label>
+                <input type="month" id="export-month">
+              </div>
+              <div class="field">
+                <label>Formato</label>
+                <select>
+                  <option>Excel (.xlsx) — Para el bot de alertas</option>
+                  <option>CSV — Para Power BI</option>
+                </select>
+              </div>
+            </div>
+            <div style="background:var(--accent-dim);border:1px solid var(--accent);border-radius:var(--radius);padding:14px;font-size:13px;line-height:1.6;">
+              <strong style="color:var(--accent)">ℹ️ Columnas generadas automáticamente:</strong><br>
+              Nombre · RUT · Contacto · Tipo Servicio · Mes · Fecha Vencimiento · Días Restantes · Estado Envío · N° OC · N° Factura · Estado Pago · Registrado por · Fecha Registro
+            </div>
+          </div>
+          <div class="form-footer">
+            <span class="form-footer-info">Los datos se exportan según lo registrado en el sistema.</span>
+            <button class="btn-submit" onclick="exportToExcel()">↓ Exportar Excel</button>
+          </div>
+        </div>
+
+        <div class="form-card fade-up" style="max-width:640px;margin-top:20px">
+          <div class="form-section">
+            <div class="section-title"><div class="num">🤖</div> Configuración del Bot de Alertas</div>
+            <p style="font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:16px;">
+              El bot lee el Excel exportado <strong>todos los días a las 10:00 AM</strong> (lunes a viernes) y genera alertas automáticas según las siguientes reglas:
+            </p>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="background:var(--surface2);border-radius:var(--radius);padding:12px 14px;font-size:13px;border-left:3px solid var(--accent)">
+                📅 <strong>Factura:</strong> Alerta a los 5, 3 y 0 días antes del vencimiento. Si no fue marcada como "Enviado", continúa alertando diariamente en -1, -2, -3... hasta que se confirme.
+              </div>
+              <div style="background:var(--surface2);border-radius:var(--radius);padding:12px 14px;font-size:13px;border-left:3px solid var(--yellow)">
+                📦 <strong>Orden de Compra:</strong> Si no hay número de OC, alerta todos los días hasta que se ingrese.
+              </div>
+              <div style="background:var(--surface2);border-radius:var(--radius);padding:12px 14px;font-size:13px;border-left:3px solid var(--green)">
+                💳 <strong>Estado de Pago:</strong> Si no está marcada como "Pagada", alerta hasta que cambie.
+              </div>
+              <div style="background:var(--surface2);border-radius:var(--radius);padding:12px 14px;font-size:13px;border-left:3px solid var(--red)">
+                📲 <strong>Canales:</strong> Gmail + WhatsApp Business API. Las alertas llegan al equipo y al CFO.
+              </div>
+            </div>
+          </div>
+          <div class="form-section">
+            <div class="section-title"><div class="num">⚙️</div> Script del Bot (Python)</div>
+            <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;">Descarga el script completo configurado con todas las reglas de alerta definidas arriba.</p>
+            <button class="btn-submit" style="width:auto" onclick="downloadBotScript()">↓ Descargar bot_alertas.py</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay" style="display:none;position:fixed;inset:0;background:rgba(10,12,16,0.85);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+  <div style="width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+  <p style="color:var(--text-muted);font-size:14px;">Cargando desde Google Sheets...</p>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h3 id="modal-title">Confirmación</h3>
+    <p id="modal-body">¿Estás seguro?</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" id="modal-confirm">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════
+//  ⚙️  CONFIGURACIÓN — EDITAR ESTOS VALORES CON LOS DATOS REALES
+// ══════════════════════════════════════════════════════════════════════════
+
+// 🔗 PASO 1: Pega aquí la URL de tu Google Apps Script (ver archivo apps_script.gs)
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbyBEF6jIw2kLbyTth4OhVav0NqoYWTh1DvGFUWOSzGgp_PItWSj2Chr9PI0LwdMOvxHZg/exec/exec";
+
+// 👥 USUARIOS DEL SISTEMA — reemplazar con los reales
+const USERS = [
+  { user: "Guillermo",       pass: "admin123",  nombre: "Administrador", role: "CFO" },
+  { user: "Matiás",  pass: "pass123",   nombre: "Juan Pérez",    role: "Ejecutivo" },
+  { user: "ejecutivo2",  pass: "pass123",   nombre: "María López",   role: "Ejecutivo" },
+];
+
+// 🏢 PROVEEDORES — reemplazar con la lista real de tu papá
+const PROVIDERS = [
+  { nombre: "Aceros del Pacífico Ltda.", rut: "76.123.456-7", contacto: "Carlos Muñoz | +56 9 8765 4321 | crlsmunoz@acerospacifico.cl" },
+  { nombre: "TechSolutions SpA", rut: "77.654.321-K", contacto: "Ana Soto | +56 9 9876 5432 | asoto@techsolutions.cl" },
+  { nombre: "Transportes Norte Sur S.A.", rut: "96.456.789-3", contacto: "Luis Vargas | +56 9 7654 3210 | lvargas@nordesur.cl" },
+  { nombre: "Consultoría Omega", rut: "78.901.234-5", contacto: "María González | +56 9 6543 2109 | mgonzalez@omega.cl" },
+  { nombre: "Suministros Andinos Ltda.", rut: "79.234.567-8", contacto: "Pedro Rojas | +56 9 5432 1098 | projas@suministrosandinos.cl" },
+  { nombre: "Digital Media SpA", rut: "80.345.678-9", contacto: "Sofía Herrera | +56 9 4321 0987 | sherrera@digitalmedia.cl" },
+  { nombre: "Mantención Industrial S.A.", rut: "81.456.789-0", contacto: "Ricardo Pizarro | +56 9 3210 9876 | rpizarro@mantencion.cl" },
+  { nombre: "Arriendos Equip. Pro Ltda.", rut: "82.567.890-1", contacto: "Claudia Reyes | +56 9 2109 8765 | creyes@arrendpos.cl" },
+  { nombre: "LogiRápido SpA", rut: "83.678.901-2", contacto: "Marcos Torres | +56 9 1098 7654 | mtorres@logirrapido.cl" },
+  { nombre: "Asesorías JKL", rut: "84.789.012-3", contacto: "Valentina Castro | +56 9 0987 6543 | vcastro@jklasesoria.cl" },
+];
+
+// ══════════════════════════════════════════════════════════════════════════
+//  ESTADO GLOBAL
+// ══════════════════════════════════════════════════════════════════════════
+let currentUser  = null;
+let registros    = [];       // ← ahora viene de Google Sheets, no localStorage
+let envioStatus  = 'no-enviado';
+let pagoStatus   = 'pendiente';
+let selectedProvider = null;
+let sheetConectado   = false;
+
+// ══════════════════════════════════════════════════════════════════════════
+//  GOOGLE SHEETS — LEER Y ESCRIBIR VÍA APPS SCRIPT
+// ══════════════════════════════════════════════════════════════════════════
+
+// Carga todos los registros desde el Sheet
+async function cargarDesdeSheet() {
+  if (!APPS_SCRIPT_URL.includes('TU_SCRIPT_ID')) {
+    // URL no configurada aún — usar localStorage como fallback
+    registros = JSON.parse(localStorage.getItem('proveedor_registros') || '[]');
+    sheetConectado = false;
+    mostrarEstadoConexion(false);
+    refreshAll();
+    return;
+  }
+  try {
+    mostrarCargando(true);
+    const res = await fetch(APPS_SCRIPT_URL + '?action=getAll', { method: 'GET' });
+    const data = await res.json();
+    if (data.ok) {
+      registros = data.registros.map(r => ({
+        ...r,
+        diasRestantes: r.vencimiento
+          ? Math.ceil((new Date(r.vencimiento) - new Date()) / 86400000)
+          : null
+      }));
+      sheetConectado = true;
+      mostrarEstadoConexion(true);
+    }
+  } catch (e) {
+    console.warn('Sheet no disponible, usando caché local:', e);
+    registros = JSON.parse(localStorage.getItem('proveedor_registros') || '[]');
+    sheetConectado = false;
+    mostrarEstadoConexion(false);
+  } finally {
+    mostrarCargando(false);
+    refreshAll();
+  }
+}
+
+// Guarda un registro nuevo en el Sheet
+async function guardarEnSheet(rec) {
+  if (!APPS_SCRIPT_URL.includes('TU_SCRIPT_ID')) {
+    // Fallback local
+    registros.push(rec);
+    localStorage.setItem('proveedor_registros', JSON.stringify(registros));
+    return true;
+  }
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'addRow', data: rec })
+    });
+    const result = await res.json();
+    if (result.ok) {
+      registros.push({ ...rec, id: result.id || rec.id });
+      localStorage.setItem('proveedor_registros', JSON.stringify(registros));
+      return true;
+    }
+    throw new Error(result.error || 'Error desconocido');
+  } catch (e) {
+    console.error('Error guardando en Sheet:', e);
+    // Guardar localmente como backup
+    registros.push(rec);
+    localStorage.setItem('proveedor_registros', JSON.stringify(registros));
+    showToast('⚠️ Guardado localmente (Sheet no disponible)', 'error');
+    return false;
+  }
+}
+
+// Elimina una fila del Sheet por ID
+async function eliminarDeSheet(id) {
+  if (!APPS_SCRIPT_URL.includes('TU_SCRIPT_ID')) {
+    registros = registros.filter(r => r.id !== id);
+    localStorage.setItem('proveedor_registros', JSON.stringify(registros));
+    return;
+  }
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'deleteRow', id })
+    });
+    registros = registros.filter(r => r.id !== id);
+    localStorage.setItem('proveedor_registros', JSON.stringify(registros));
+  } catch (e) {
+    console.error('Error eliminando:', e);
+  }
+}
+
+function mostrarEstadoConexion(conectado) {
+  const el = document.getElementById('conexion-badge');
+  if (!el) return;
+  el.textContent = conectado ? '🟢 Google Sheets conectado' : '🟡 Modo local (configura el Script URL)';
+  el.style.color = conectado ? 'var(--green)' : 'var(--yellow)';
+}
+
+function mostrarCargando(show) {
+  const el = document.getElementById('loading-overlay');
+  if (el) el.style.display = show ? 'flex' : 'none';
+}
+
+// ══════════════════════════════════════════════ LOGIN
+function doLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value;
+  const found = USERS.find(x => x.user === u && x.pass === p);
+  if (!found) {
+    document.getElementById('login-error').style.display = 'block';
+    return;
+  }
+  currentUser = found;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-name-display').textContent = found.nombre;
+  document.getElementById('user-avatar').textContent = found.nombre[0];
+
+  // Set current month
+  const now = new Date();
+  const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const label = months[now.getMonth()] + ' ' + now.getFullYear();
+  document.getElementById('current-month-badge').textContent = label;
+  document.getElementById('dash-month-label').textContent = label;
+
+  const monthVal = now.toISOString().slice(0,7);
+  document.getElementById('inp-mes').value = monthVal;
+  document.getElementById('export-month').value = monthVal;
+
+  // ← Carga datos desde Google Sheets
+  cargarDesdeSheet();
+}
+
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+}
+
+// ══════════════════════════════════════════════ NAVIGATION
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  document.getElementById('nav-' + id).classList.add('active');
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'registros') renderRegistros();
+  if (id === 'alertas') renderAlertas();
+  if (id === 'nuevo') resetForm();
+}
+
+// ══════════════════════════════════════════════ AUTOCOMPLETE
+function filterProviders(query) {
+  const list = document.getElementById('autocomplete-list');
+  if (!query || query.length < 1) { list.classList.remove('open'); return; }
+  const q = query.toLowerCase();
+  const matches = PROVIDERS.filter(p => p.nombre.toLowerCase().includes(q));
+  if (!matches.length) { list.classList.remove('open'); return; }
+  list.innerHTML = matches.map(p =>
+    `<div class="autocomplete-item" onclick="selectProvider('${p.nombre}')">
+      ${p.nombre}<small>${p.rut}</small>
+    </div>`
+  ).join('');
+  list.classList.add('open');
+}
+
+function selectProvider(nombre) {
+  const p = PROVIDERS.find(x => x.nombre === nombre);
+  if (!p) return;
+  selectedProvider = p;
+  document.getElementById('inp-nombre').value = p.nombre;
+  document.getElementById('inp-rut').value = p.rut;
+  document.getElementById('inp-contacto').value = p.contacto;
+  document.getElementById('autocomplete-list').classList.remove('open');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.autocomplete-wrapper')) {
+    document.getElementById('autocomplete-list').classList.remove('open');
+  }
+});
+
+// ══════════════════════════════════════════════ STATUS SELECTORS
+function setEnvioStatus(s) {
+  envioStatus = s;
+  document.getElementById('opt-enviado').className = 'status-opt' + (s==='enviado' ? ' selected-green' : '');
+  document.getElementById('opt-no-enviado').className = 'status-opt' + (s==='no-enviado' ? ' selected-red' : '');
+  document.getElementById('envio-blocker').style.display = s === 'no-enviado' ? 'flex' : 'none';
+}
+
+function setPagoStatus(s) {
+  pagoStatus = s;
+  document.getElementById('opt-pagada').className = 'status-opt' + (s==='pagada' ? ' selected-green' : '');
+  document.getElementById('opt-pendiente').className = 'status-opt' + (s==='pendiente' ? ' selected-yellow' : '');
+}
+
+// ══════════════════════════════════════════════ FILE UPLOAD
+function handleFile(type, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const zone = document.getElementById('zone-' + type);
+  zone.classList.add('has-file');
+  zone.querySelector('.upload-ico').textContent = '✅';
+  zone.querySelector('p').innerHTML = `<strong>${file.name}</strong>`;
+  const nameEl = document.getElementById('file-' + type + '-name');
+  nameEl.textContent = '✓ ' + file.name + ' listo para subir a Google Drive';
+  nameEl.style.display = 'block';
+}
+
+// ══════════════════════════════════════════════ FORM STEPS
+function goStep2() {
+  if (!document.getElementById('inp-nombre').value) { showToast('⚠️ Ingresa el nombre del proveedor.','error'); return; }
+  if (!document.getElementById('inp-servicio').value) { showToast('⚠️ Selecciona el tipo de servicio.','error'); return; }
+  if (envioStatus !== 'enviado') {
+    document.getElementById('envio-blocker').style.display = 'flex';
+    showToast('🚫 Debes marcar la factura como "Enviado" para continuar.','error');
+    return;
+  }
+  document.getElementById('form-step-1').style.display = 'none';
+  document.getElementById('form-step-2').style.display = 'block';
+  updateSteps(2);
+}
+
+function goStep1() {
+  document.getElementById('form-step-2').style.display = 'none';
+  document.getElementById('form-step-1').style.display = 'block';
+  updateSteps(1);
+}
+
+function goStep3() {
+  if (!document.getElementById('inp-oc-num').value) { showToast('⚠️ Ingresa el número de Orden de Compra.','error'); return; }
+  if (!document.getElementById('inp-fac-num').value) { showToast('⚠️ Ingresa el número de Factura.','error'); return; }
+  buildSummary();
+  document.getElementById('form-step-2').style.display = 'none';
+  document.getElementById('form-step-3').style.display = 'block';
+  updateSteps(3);
+}
+
+function goStep2Back() {
+  document.getElementById('form-step-3').style.display = 'none';
+  document.getElementById('form-step-2').style.display = 'block';
+  updateSteps(2);
+}
+
+function updateSteps(active) {
+  for (let i=1;i<=3;i++) {
+    const s = document.getElementById('step-'+i);
+    s.className = 'step' + (i < active ? ' done' : i === active ? ' active' : '');
+    if (i < 3) document.getElementById('line-'+i).className = 'step-line' + (i < active ? ' done' : '');
+  }
+}
+
+function buildSummary() {
+  const fields = [
+    ['Proveedor', document.getElementById('inp-nombre').value],
+    ['RUT', document.getElementById('inp-rut').value],
+    ['Contacto', document.getElementById('inp-contacto').value],
+    ['Tipo de Servicio', document.getElementById('inp-servicio').value],
+    ['Mes', document.getElementById('inp-mes').value],
+    ['Fecha Vencimiento', document.getElementById('inp-vencimiento').value || '—'],
+    ['Estado Envío', envioStatus === 'enviado' ? '✓ Enviado' : '✗ No Enviado'],
+    ['N° Orden de Compra', document.getElementById('inp-oc-num').value],
+    ['N° Factura', document.getElementById('inp-fac-num').value],
+    ['Estado Pago', pagoStatus === 'pagada' ? '✓ Pagada' : '⏳ Pendiente'],
+  ];
+  document.getElementById('summary-table').innerHTML = fields.map(([k,v]) =>
+    `<tr><td>${k}</td><td>${v}</td></tr>`
+  ).join('');
+}
+
+async function submitForm() {
+  const venc = document.getElementById('inp-vencimiento').value;
+  const dias = venc ? Math.ceil((new Date(venc) - new Date()) / 86400000) : null;
+  const rec = {
+    id: Date.now(),
+    nombre: document.getElementById('inp-nombre').value,
+    rut: document.getElementById('inp-rut').value,
+    contacto: document.getElementById('inp-contacto').value,
+    servicio: document.getElementById('inp-servicio').value,
+    mes: document.getElementById('inp-mes').value,
+    vencimiento: venc,
+    diasRestantes: dias,
+    envio: envioStatus,
+    ocNum: document.getElementById('inp-oc-num').value,
+    facNum: document.getElementById('inp-fac-num').value,
+    pago: pagoStatus,
+    registradoPor: currentUser.nombre,
+    fechaRegistro: new Date().toLocaleDateString('es-CL'),
+  };
+
+  // Mostrar spinner mientras guarda
+  const btn = document.querySelector('#form-step-3 .btn-submit');
+  btn.disabled = true;
+  btn.textContent = '⏳ Guardando en Google Sheets...';
+
+  const ok = await guardarEnSheet(rec);
+
+  btn.disabled = false;
+  btn.textContent = '✓ Guardar Registro';
+
+  if (ok && sheetConectado) {
+    showToast('✅ Registro guardado en Google Sheets.', 'success');
+  } else if (ok) {
+    showToast('✅ Guardado localmente (conecta el Sheet para sincronizar).', 'success');
+  }
+  refreshAll();
+  setTimeout(() => showView('registros'), 800);
+}
+
+function resetForm() {
+  document.getElementById('inp-nombre').value = '';
+  document.getElementById('inp-rut').value = '';
+  document.getElementById('inp-contacto').value = '';
+  document.getElementById('inp-servicio').value = '';
+  document.getElementById('inp-oc-num').value = '';
+  document.getElementById('inp-fac-num').value = '';
+  envioStatus = 'no-enviado';
+  pagoStatus = 'pendiente';
+  setEnvioStatus('no-enviado');
+  setPagoStatus('pendiente');
+  ['oc','fac'].forEach(t => {
+    document.getElementById('zone-'+t).classList.remove('has-file');
+    document.getElementById('file-'+t+'-name').style.display='none';
+  });
+  document.getElementById('form-step-1').style.display='block';
+  document.getElementById('form-step-2').style.display='none';
+  document.getElementById('form-step-3').style.display='none';
+  updateSteps(1);
+}
+
+// ══════════════════════════════════════════════ RENDER FUNCTIONS
+function renderDashboard() {
+  const tbody = document.getElementById('dash-tbody');
+  tbody.innerHTML = registros.length === 0
+    ? '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:32px">No hay registros aún.</td></tr>'
+    : registros.map(r => `
+      <tr>
+        <td><div class="provider-name">${r.nombre}</div><div class="provider-rut">${r.rut}</div></td>
+        <td>${r.servicio || '—'}</td>
+        <td>${r.envio === 'enviado' ? '<span class="status-badge enviado">✓ Enviado</span>' : '<span class="status-badge no-enviado">✗ No enviado</span>'}</td>
+        <td>${r.facNum || '—'}</td>
+        <td>${r.ocNum || '—'}</td>
+        <td>${r.pago === 'pagada' ? '<span class="status-badge pagado">✓ Pagada</span>' : '<span class="status-badge pendiente">⏳ Pendiente</span>'}</td>
+        <td>${r.diasRestantes !== null && r.diasRestantes !== undefined ? diasLabel(r.diasRestantes) : '—'}</td>
+      </tr>`
+    ).join('');
+
+  // dash cards
+  const total = registros.length;
+  const pagadas = registros.filter(r => r.pago === 'pagada').length;
+  const pendientes = registros.filter(r => r.pago === 'pendiente').length;
+  const enviadas = registros.filter(r => r.envio === 'enviado').length;
+  document.getElementById('dash-cards').innerHTML = `
+    <div class="dash-card accent"><div class="dash-card-label">Total Registros</div><div class="dash-card-val">${total}</div><div class="dash-card-sub">este mes</div></div>
+    <div class="dash-card green"><div class="dash-card-label">Facturas Pagadas</div><div class="dash-card-val">${pagadas}</div><div class="dash-card-sub">confirmadas</div></div>
+    <div class="dash-card yellow"><div class="dash-card-label">Pendientes de Pago</div><div class="dash-card-val">${pendientes}</div><div class="dash-card-sub">requieren seguimiento</div></div>
+    <div class="dash-card red"><div class="dash-card-label">Sin OC / Sin Factura</div><div class="dash-card-val">${registros.filter(r=>!r.ocNum||!r.facNum).length}</div><div class="dash-card-sub">incompletos</div></div>
+  `;
+}
+
+function diasLabel(d) {
+  if (d < 0) return `<span style="color:var(--red);font-weight:600">${Math.abs(d)} días vencida</span>`;
+  if (d === 0) return `<span style="color:var(--red);font-weight:600">Vence HOY</span>`;
+  if (d <= 3) return `<span style="color:var(--yellow);font-weight:600">${d} días</span>`;
+  return `<span style="color:var(--green)">${d} días</span>`;
+}
+
+function renderRegistros(filter = 'todos', search = '') {
+  const tbody = document.getElementById('registros-tbody');
+  let list = registros.filter(r => {
+    if (filter !== 'todos' && r.pago !== filter) return false;
+    if (search && !r.nombre.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+  tbody.innerHTML = list.length === 0
+    ? '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:32px">Sin resultados.</td></tr>'
+    : list.map(r => `
+      <tr>
+        <td><div class="provider-name">${r.nombre}</div><div class="provider-rut">${r.rut}</div></td>
+        <td style="font-size:12.5px">${r.servicio||'—'}</td>
+        <td style="font-size:12.5px">${r.mes||'—'}</td>
+        <td>${r.ocNum||'<span style="color:var(--red)">⚠ Falta</span>'}</td>
+        <td>${r.facNum||'<span style="color:var(--red)">⚠ Falta</span>'}</td>
+        <td>${r.envio==='enviado'?'<span class="status-badge enviado">✓</span>':'<span class="status-badge no-enviado">✗</span>'}</td>
+        <td>${r.pago==='pagada'?'<span class="status-badge pagado">✓ Pagada</span>':'<span class="status-badge pendiente">⏳</span>'}</td>
+        <td>${r.diasRestantes!==null&&r.diasRestantes!==undefined?diasLabel(r.diasRestantes):'—'}</td>
+        <td><button class="action-btn" onclick="deleteRecord(${r.id})">✕</button></td>
+      </tr>`
+    ).join('');
+}
+
+function renderAlertas() {
+  const list = document.getElementById('alert-list');
+  const alerts = [];
+  registros.forEach(r => {
+    if (!r.ocNum) alerts.push({ type:'critical', icon:'📦', title:`Sin Orden de Compra — ${r.nombre}`, desc:'No se ha ingresado número de OC. El bot alerta diariamente.', days:'Alerta diaria' });
+    if (!r.facNum) alerts.push({ type:'critical', icon:'🧾', title:`Sin Factura — ${r.nombre}`, desc:'No se ha ingresado número de factura.', days:'Alerta diaria' });
+    if (r.pago === 'pendiente') alerts.push({ type:'warning', icon:'💳', title:`Pago Pendiente — ${r.nombre}`, desc:'La factura aún no ha sido marcada como pagada.', days:'Pendiente' });
+    if (r.diasRestantes !== null && r.diasRestantes !== undefined) {
+      if (r.diasRestantes <= 0) alerts.push({ type:'critical', icon:'🚨', title:`Factura VENCIDA — ${r.nombre}`, desc:`Venció hace ${Math.abs(r.diasRestantes)} días. Bot enviará alertas hasta que se confirme.`, days:`${Math.abs(r.diasRestantes)}d vencida` });
+      else if (r.diasRestantes <= 5) alerts.push({ type:'warning', icon:'⏰', title:`Factura próxima a vencer — ${r.nombre}`, desc:`Vence en ${r.diasRestantes} días.`, days:`${r.diasRestantes} días` });
+    }
+  });
+  document.getElementById('badge-alertas').textContent = alerts.length;
+  list.innerHTML = alerts.length === 0
+    ? '<div style="text-align:center;padding:40px;color:var(--text-muted)">✅ Sin alertas activas en este momento.</div>'
+    : alerts.map(a => `
+      <div class="alert-card ${a.type} fade-up">
+        <div class="alert-icon">${a.icon}</div>
+        <div class="alert-body">
+          <div class="alert-title">${a.title}</div>
+          <div class="alert-desc">${a.desc}</div>
+        </div>
+        <div class="alert-days ${a.type==='critical'?'':'warn'}">${a.days}</div>
+      </div>`
+    ).join('');
+}
+
+function refreshAll() {
+  const total = registros.length;
+  const pendientes = registros.filter(r=>r.pago==='pendiente').length;
+  const pagadas = registros.filter(r=>r.pago==='pagada').length;
+  const enviadas = registros.filter(r=>r.envio==='enviado').length;
+  const sinEnviar = registros.filter(r=>r.envio!=='enviado').length;
+  document.getElementById('badge-total').textContent = total;
+  document.getElementById('stat-pagadas').textContent = pagadas;
+  document.getElementById('stat-pendientes').textContent = pendientes;
+  document.getElementById('stat-enviadas').textContent = enviadas;
+  document.getElementById('stat-sin-enviar').textContent = sinEnviar;
+  const alerts = registros.filter(r => !r.ocNum || !r.facNum || r.pago==='pendiente' || (r.diasRestantes!==null&&r.diasRestantes<=5)).length;
+  document.getElementById('badge-alertas').textContent = alerts;
+  renderDashboard();
+}
+
+// ══════════════════════════════════════════════ FILTERS
+let currentFilter = 'todos';
+function filterTable(search) { renderRegistros(currentFilter, search); }
+function filterByPago(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRegistros(f);
+}
+async function deleteRecord(id) {
+  await eliminarDeSheet(id);
+  refreshAll();
+  renderRegistros();
+  showToast('Registro eliminado.', 'success');
+}
+
+// ══════════════════════════════════════════════ EXPORT EXCEL
+function exportToExcel() {
+  const headers = ['Nombre','RUT','Contacto','Tipo Servicio','Mes','Fecha Vencimiento','Días Restantes','Estado Envío','N° OC','N° Factura','Estado Pago','Registrado Por','Fecha Registro'];
+  const rows = registros.map(r => [
+    r.nombre, r.rut, r.contacto, r.servicio, r.mes, r.vencimiento||'',
+    r.diasRestantes!==null&&r.diasRestantes!==undefined?r.diasRestantes:'',
+    r.envio==='enviado'?'SI':'NO', r.ocNum||'', r.facNum||'',
+    r.pago==='pagada'?'PAGADA':'PENDIENTE', r.registradoPor, r.fechaRegistro
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `proveedores_${document.getElementById('export-month').value||'mes'}.csv`;
+  a.click();
+  showToast('✅ Excel exportado correctamente.', 'success');
+}
+
+function downloadBotScript() {
+  const script = `#!/usr/bin/env python3
+"""
+bot_alertas.py — Bot de Alertas de Proveedores
+Corre todos los días a las 10:00 AM (lunes a viernes)
+Canales: Gmail + WhatsApp Business API
+"""
+import pandas as pd
+from datetime import datetime, date
+import smtplib
+from email.mime.text import MIMEText
+import requests
+import schedule, time
+
+# ── CONFIG ──────────────────────────────────────────
+EXCEL_PATH = "proveedores_mes.csv"
+GMAIL_FROM = "bot@empresa.cl"
+GMAIL_PASS  = "TU_APP_PASSWORD"
+EQUIPO_EMAILS = ["cfo@empresa.cl", "ejecutivo1@empresa.cl"]
+EQUIPO_WSP    = ["+56912345678", "+56987654321"]
+WSP_TOKEN     = "TU_WHATSAPP_BUSINESS_TOKEN"
+WSP_PHONE_ID  = "TU_PHONE_NUMBER_ID"
+
+# ── FUNCIONES ────────────────────────────────────────
+def send_gmail(to_list, subject, body):
+    msg = MIMEText(body, 'html')
+    msg['Subject'] = subject
+    msg['From']    = GMAIL_FROM
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as s:
+        s.login(GMAIL_FROM, GMAIL_PASS)
+        for to in to_list:
+            msg['To'] = to
+            s.send_message(msg)
+
+def send_whatsapp(phones, message):
+    for phone in phones:
+        requests.post(
+            f"https://graph.facebook.com/v18.0/{WSP_PHONE_ID}/messages",
+            headers={"Authorization": f"Bearer {WSP_TOKEN}", "Content-Type": "application/json"},
+            json={"messaging_product":"whatsapp","to":phone,
+                  "type":"text","text":{"body":message}}
+        )
+
+def alert(subject, body_html, wsp_msg):
+    send_gmail(EQUIPO_EMAILS, subject, body_html)
+    send_whatsapp(EQUIPO_WSP, wsp_msg)
+    print(f"[ALERTA] {subject}")
+
+def run_bot():
+    today = date.today()
+    if today.weekday() >= 5:  # Skip weekend
+        return
+    try:
+        df = pd.read_csv(EXCEL_PATH, encoding='utf-8-sig')
+    except Exception as e:
+        print(f"Error leyendo Excel: {e}")
+        return
+
+    for _, row in df.iterrows():
+        nombre = row.get('Nombre','?')
+
+        # ── ORDEN DE COMPRA ─────────────────────────
+        if pd.isna(row.get('N° OC')) or str(row.get('N° OC','')).strip() == '':
+            alert(
+                f"⚠️ Sin Orden de Compra — {nombre}",
+                f"<b>{nombre}</b> no tiene número de OC registrado.",
+                f"⚠️ ALERTA ProveedorSys\\n{nombre} no tiene Orden de Compra. Por favor ingresar."
+            )
+
+        # ── FACTURA ─────────────────────────────────
+        if pd.isna(row.get('N° Factura')) or str(row.get('N° Factura','')).strip() == '':
+            alert(
+                f"🧾 Sin Factura — {nombre}",
+                f"<b>{nombre}</b> no tiene número de factura.",
+                f"🧾 ALERTA ProveedorSys\\n{nombre} no tiene factura registrada."
+            )
+
+        # ── VENCIMIENTO ──────────────────────────────
+        venc = row.get('Fecha Vencimiento','')
+        enviado = str(row.get('Estado Envío','')).upper()
+        if venc and str(venc).strip():
+            try:
+                venc_date = datetime.strptime(str(venc), '%Y-%m-%d').date()
+                dias = (venc_date - today).days
+                if dias in [5, 3, 0] or dias < 0:
+                    if enviado != 'SI':
+                        alert(
+                            f"📅 Factura {'VENCIDA' if dias<0 else f'vence en {dias} días'} — {nombre}",
+                            f"<b>{nombre}</b>: Factura {'venció hace '+str(abs(dias))+' días' if dias<0 else 'vence en '+str(dias)+' días'}. Estado envío: {enviado}",
+                            f"📅 ProveedorSys\\n{nombre}: Factura {'vencida '+str(abs(dias))+'d' if dias<0 else 'vence en '+str(dias)+'d'}. PENDIENTE DE ENVÍO."
+                        )
+            except: pass
+
+        # ── ESTADO PAGO ──────────────────────────────
+        pago = str(row.get('Estado Pago','')).upper()
+        if pago != 'PAGADA':
+            alert(
+                f"💳 Pago Pendiente — {nombre}",
+                f"<b>{nombre}</b> tiene factura pendiente de pago.",
+                f"💳 ProveedorSys\\n{nombre}: Factura PENDIENTE de pago. Verificar."
+            )
+
+    print(f"[BOT] Revisión completada — {today}")
+
+# ── SCHEDULER ────────────────────────────────────────
+schedule.every().monday.at("10:00").do(run_bot)
+schedule.every().tuesday.at("10:00").do(run_bot)
+schedule.every().wednesday.at("10:00").do(run_bot)
+schedule.every().thursday.at("10:00").do(run_bot)
+schedule.every().friday.at("10:00").do(run_bot)
+
+print("Bot activo. Esperando las 10:00 AM de lunes a viernes...")
+while True:
+    schedule.run_pending()
+    time.sleep(60)
+`;
+  const blob = new Blob([script], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'bot_alertas.py';
+  a.click();
+  showToast('✅ Script del bot descargado.', 'success');
+}
+
+// ══════════════════════════════════════════════ TOAST
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  setTimeout(() => t.className = '', 3500);
+}
+
+// ══════════════════════════════════════════════ MODAL
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+</script>
+</body>
+</html>
